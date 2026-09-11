@@ -86,13 +86,13 @@ let save (settings: JsonValue) : unit =
     let settings =
         JsonValue.setPath [ "settings"; "meta"; "last_updated" ] (JString(DateTime.UtcNow.ToString "o")) settings
 
-    // Credentials live in their own file, never inline in config.json.
-    let credentials = JsonValue.getPath [ "credentials" ] settings |> Option.defaultValue (JObject Map.empty)
+    // Credentials live in their own file, never inline in config.json. `set` is the
+    // only place that writes credentials.json, and it does so directly against the
+    // full on-disk credentials store - `settings.credentials` here is never more than
+    // whatever the caller happened to pass in (often nothing, or a single just-set
+    // key), so writing it out would silently clobber every other stored credential.
     let onDisk = JsonValue.setPath [ "credentials" ] (JObject Map.empty) settings
     writeJson (Paths.configFile ()) onDisk
-
-    if credentials <> JObject Map.empty then
-        writeJson (Paths.credentialsFile ()) credentials
 
 /// Environment-variable override for a dotted key, e.g. "agent.default_model"
 /// -> SKOGAI_AGENT_DEFAULT_MODEL (SKOGAI_TEST_* takes precedence, for tests).
@@ -141,8 +141,7 @@ let set (key: string) (value: JsonValue) : unit =
         let credKey = key.Substring "credentials.".Length
         let creds = JsonValue.setPath (splitKey credKey) value (loadCredentials ())
         writeJson (Paths.credentialsFile ()) creds
-        let settings = JsonValue.setPath [ "credentials"; credKey ] value (load ())
-        save settings
+        save (load ())
     else
         let settings = JsonValue.setPath (splitKey key) value (load ())
         save settings
