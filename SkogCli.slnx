@@ -1,0 +1,17 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/SkogCli.Agent/SkogCli.Agent.fsproj" />
+    <Project Path="src/SkogCli.Cli/SkogCli.Cli.fsproj" />
+    <Project Path="src/SkogCli.Core/SkogCli.Core.fsproj" />
+    <Project Path="src/SkogCli.Memory/SkogCli.Memory.fsproj" />
+    <Project Path="src/SkogCli.Scripts/SkogCli.Scripts.fsproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SkogCli.Tests/SkogCli.Tests.fsproj" />
+  </Folder>
+</Solution>

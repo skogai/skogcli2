@@ -1,0 +1,5 @@
+[tools]
+dotnet = "latest"
+
+[tasks.build]
+run = "dotnet build --configuration Release --self-contained"
