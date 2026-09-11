@@ -103,6 +103,15 @@ let ``credentials are stored separately from config json`` () =
         Assert.DoesNotContain("secret", onDisk))
 
 [<Fact>]
+let ``setting a second credential does not clobber a previously stored one`` () =
+    withTempConfigDir (fun () ->
+        SkogCli.Core.Settings.set "credentials.api_key" (JString "secret1")
+        SkogCli.Core.Settings.set "credentials.other_key" (JString "secret2")
+
+        Assert.Equal(Some(JString "secret1"), SkogCli.Core.Settings.get "credentials.api_key")
+        Assert.Equal(Some(JString "secret2"), SkogCli.Core.Settings.get "credentials.other_key"))
+
+[<Fact>]
 let ``an environment override takes precedence over a stored value`` () =
     withTempConfigDir (fun () ->
         SkogCli.Core.Settings.set "agent.default_model" (JString "stored")
