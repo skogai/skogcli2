@@ -2,4 +2,14 @@
 dotnet = "latest"
 
 [tasks.build]
-run = "dotnet build --configuration Release --self-contained"
+run = "dotnet build --configuration Release"
+
+[tasks.test]
+run = "dotnet test --configuration Release"
+
+# Self-contained applies to the CLI executable itself, not the library or
+# test projects, so it's a separate task rather than part of `build`
+# (`dotnet build --self-contained` across the whole solution fails: the
+# test project has no runtime identifier to infer).
+[tasks.publish]
+run = "dotnet publish src/SkogCli.Cli --configuration Release --self-contained"

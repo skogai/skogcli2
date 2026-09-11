@@ -1,34 +1,28 @@
-# SkogCli (F#)
+# SkogCli
 
-A from-scratch, statically typed rewrite of [SkogCli](../README.md) — the
-Python/Typer CLI in this repository — in F#. The Python implementation
-remains at the repository root and is unaffected; this directory is a
-self-contained parallel implementation, not a patch on top of it.
+A statically typed, modular F# CLI for SkogAI project management: memory
+(knowledge-base) management, script automation, configuration, and agent
+interaction.
 
-## Why
-
-The Python CLI grew organically: settings are untyped `dict[str, Any]`,
-several commands raise bare `RuntimeError`s when a directory setting hasn't
-been configured (including one config lookup that is circular — it needs
-the config file to find the config directory), and behaviour that should be
-data (script metadata, agent config) is scattered across ad-hoc JSON files
-with no shared schema. This rewrite keeps the same command surface and
-underlying ideas (config management, a `basic-memory` wrapper, script
-management, agent scripts) but backed by one small, explicit JSON value
-type and modules with no circular dependencies.
+This is a from-scratch rewrite of the original
+[SkogCli](https://github.com/skogai/skogcli) (Python/Typer). It keeps the
+same command surface and underlying ideas — config management, a
+`basic-memory` wrapper, script management, agent scripts — but redesigned
+around one small, explicit JSON value type and modules with no circular
+dependencies, instead of untyped `dict[str, Any]` settings and a few
+directory-lookup functions that could recurse into themselves.
 
 ## Layout
 
 ```
-fsharp/
-  src/
-    SkogCli.Core/     JsonValue (a typed JSON tree), filesystem paths, Settings, process helper
-    SkogCli.Memory/   thin wrapper around the external `basic-memory` CLI
-    SkogCli.Scripts/  create/list/run/edit/search user scripts + JSON metadata
-    SkogCli.Agent/    named agent configs, each backed by a generated ./scripts/<name>.sh
-    SkogCli.Cli/      Argu-based argument parsing and command dispatch (the entry point)
-  tests/
-    SkogCli.Tests/    xUnit tests for Core.Json, Core.Settings and Scripts.Scripts
+src/
+  SkogCli.Core/     JsonValue (a typed JSON tree), filesystem paths, Settings, process helper
+  SkogCli.Memory/   thin wrapper around the external `basic-memory` CLI
+  SkogCli.Scripts/  create/list/run/edit/search user scripts + JSON metadata
+  SkogCli.Agent/    named agent configs, each backed by a generated ./scripts/<name>.sh
+  SkogCli.Cli/      Argu-based argument parsing and command dispatch (the entry point)
+tests/
+  SkogCli.Tests/    xUnit tests for Core.Json, Core.Settings and Scripts.Scripts
 ```
 
 `SkogCli.Core` has no dependencies on the others; `Memory`, `Scripts` and
@@ -56,13 +50,20 @@ shape instead of hoping a `dict` key holds the type they expect.
 
 ## Building and testing
 
-Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download).
+Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download) (a
+[`mise`](https://mise.jdx.dev/) config is included and will install it
+automatically: `mise install`).
 
 ```bash
-cd fsharp
-dotnet build                                    # build everything
-dotnet test tests/SkogCli.Tests                 # run the test suite
+dotnet build                                    # build everything (or: mise run build)
+dotnet test tests/SkogCli.Tests                 # run the test suite (or: mise run test)
 dotnet run --project src/SkogCli.Cli -- --help  # run the CLI
+```
+
+To produce a self-contained single-file binary for the CLI itself:
+
+```bash
+dotnet publish src/SkogCli.Cli --configuration Release --self-contained   # or: mise run publish
 ```
 
 ## Command surface
@@ -98,12 +99,12 @@ variable, e.g. `SKOGAI_AGENT_DEFAULT_MODEL=gpt-5` overrides the
 `agent.default_model` setting (`SKOGAI_TEST_*` takes precedence over that,
 for use in tests).
 
-## Deliberate differences from the Python CLI
+## Deliberate differences from the original Python CLI
 
 These were dropped or changed on purpose rather than ported as-is:
 
 - **No circular config-directory lookup.** The Python `get_config_dir()`
-  reads a setting that itself requires loading the config file from the
+  read a setting that itself required loading the config file from the
   config directory. This only worked because `SKOGAI_CONFIG_DIR` happened
   to always be set; here directory resolution is non-recursive with a real
   default (see table above).
