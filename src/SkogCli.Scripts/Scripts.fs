@@ -212,10 +212,23 @@ let listAvailableTemplates () : Map<string, string list> =
 
 // --- Commands ---------------------------------------------------------------------
 
+/// A script name is used verbatim as a filename, never as a path, so reject
+/// anything that could escape the scripts directory (a path separator or a
+/// ".." segment) rather than silently writing outside it.
+let private isSafeScriptName (name: string) : bool =
+    not (
+        String.IsNullOrWhiteSpace name
+        || name.Contains '/'
+        || name.Contains '\\'
+        || name = "."
+        || name = ".."
+    )
+
 type CreateResult =
     | Created of ScriptInfo
     | AlreadyExists of ScriptInfo
     | TemplateMissing of string
+    | InvalidName of string
 
 let createScript
     (name: string)
@@ -224,6 +237,10 @@ let createScript
     (asGlobal: bool)
     (description: string)
     : CreateResult =
+    if not (isSafeScriptName name) then
+        InvalidName $"'{name}' is not a valid script name (no '/', '\\', or '..')."
+    else
+
     let dir = if asGlobal then Directory.CreateDirectory(Paths.globalScriptsDir ()).FullName else Paths.userScriptsDir ()
     let ext = extensionFor scriptType
     let path = Path.Combine(dir, $"{name}{ext}")
@@ -285,6 +302,10 @@ let runScript (script: ScriptInfo) (args: string list) : RunOutcome =
       Stderr = result.Stderr }
 
 let copyScript (source: ScriptInfo) (destName: string) (asGlobal: bool) : Result<ScriptInfo, string> =
+    if not (isSafeScriptName destName) then
+        Error $"'{destName}' is not a valid script name (no '/', '\\', or '..')."
+    else
+
     let dir = if asGlobal then Directory.CreateDirectory(Paths.globalScriptsDir ()).FullName else Paths.userScriptsDir ()
     let ext = Path.GetExtension source.Path
     let destPath = Path.Combine(dir, $"{destName}{ext}")

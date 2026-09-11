@@ -313,9 +313,12 @@ let private handleScript (results: ParseResults<ScriptCommand>) =
             | None -> exit 1
             | Some script ->
                 let outcome = runScript script scriptArgs
-                if outcome.Stdout <> "" then Console.Out.Write outcome.Stdout
-
-                if outcome.ExitCode <> 0 then
+                // A failed script's stdout is never shown, matching stderr-only failure
+                // reporting elsewhere in the CLI - printing it would leak output from a
+                // command that didn't succeed.
+                if outcome.ExitCode = 0 then
+                    Console.Out.Write outcome.Stdout
+                else
                     Console.Error.Write outcome.Stderr
                     exit outcome.ExitCode
         | [] -> eprintfn "Error: 'script run' requires a script name."
@@ -339,6 +342,7 @@ let private handleScript (results: ParseResults<ScriptCommand>) =
             | Created info -> printfn "Created %s script: %s" (locationLabel info.Location) info.Path
             | AlreadyExists _ -> ()
             | TemplateMissing msg -> eprintfn "Error: %s" msg
+            | InvalidName msg -> eprintfn "Error: %s" msg
 
             if sub.Contains ScriptCreateArgs.Edit then
                 match findScript name true with

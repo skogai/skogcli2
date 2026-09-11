@@ -180,6 +180,27 @@ let ``findScript locates a script by bare name`` () =
         Assert.True((findScript "findme" true).IsSome)
         Assert.True((findScript "missing" true).IsNone))
 
+[<Theory>]
+[<InlineData("../escape")>]
+[<InlineData("a/b")>]
+[<InlineData("a\\b")>]
+[<InlineData("..")>]
+let ``createScript rejects names that could escape the scripts directory`` (name: string) =
+    withTempScriptsDir (fun () ->
+        match createScript name "shell" "basic" false "" with
+        | InvalidName _ -> ()
+        | other -> failwith $"expected InvalidName for '%s{name}', got %A{other}")
+
+[<Fact>]
+let ``copyScript rejects a destination name that could escape the scripts directory`` () =
+    withTempScriptsDir (fun () ->
+        match createScript "source" "shell" "basic" false "" with
+        | Created info ->
+            match copyScript info "../escape" false with
+            | Error _ -> ()
+            | Ok dest -> failwith $"expected an error, got %A{dest}"
+        | other -> failwith $"expected Created, got %A{other}")
+
 [<Fact>]
 let ``runScript executes the script and tracks run_count`` () =
     withTempScriptsDir (fun () ->
