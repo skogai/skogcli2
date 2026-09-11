@@ -99,6 +99,17 @@ variable, e.g. `SKOGAI_AGENT_DEFAULT_MODEL=gpt-5` overrides the
 `agent.default_model` setting (`SKOGAI_TEST_*` takes precedence over that,
 for use in tests).
 
+## Security notes
+
+- **`script run` never shows a failed script's stdout.** Output is only
+  written once the process is known to have exited 0; on failure only
+  stderr and the original exit code propagate, so a failing command can't
+  leak whatever it printed on the way down.
+- **Script names are validated before being used as filenames.** `script
+  create`/`script copy` reject any name containing a path separator or a
+  `..` segment, so a name can't write outside the configured scripts
+  directory.
+
 ## Deliberate differences from the original Python CLI
 
 These were dropped or changed on purpose rather than ported as-is:
